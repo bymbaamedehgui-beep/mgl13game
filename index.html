@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="mn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13 — Карт Тоглоом</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0d1117" id="themeColor">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="13 Тоглоом">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root[data-theme="dark"]{
+  --bg:#0d1117;--surf:#161b22;--card:#1c2128;
+  --gold:#f0c040;--red:#e05c4b;--green:#3fb950;--purple:#bc8cff;
+  --text:#e6edf3;--muted:#8b949e;--border:#30363d;
+  --glow:rgba(240,192,64,0.18);--shadow:rgba(0,0,0,0.5);--canvas-op:0.18;
+}
+:root[data-theme="light"]{
+  --bg:#f4f1eb;--surf:#ffffff;--card:#f9f7f3;
+  --gold:#c8860a;--red:#c0392b;--green:#1a7f37;--purple:#7c3aed;
+  --text:#1a1a2e;--muted:#6b7280;--border:#d1c9b8;
+  --glow:rgba(200,134,10,0.15);--shadow:rgba(0,0,0,0.12);--canvas-op:0.08;
+}
+*,*::before,*::after{transition:background-color 0.3s,border-color 0.3s,color 0.3s,box-shadow 0.3s;margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;min-height:100vh;overflow-x:hidden;}
+#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:var(--canvas-op);}
+.app{position:relative;z-index:1;}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:rgba(13,17,23,0.85);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);position:sticky;top:0;z-index:20;gap:8px;flex-wrap:wrap;}
+[data-theme="light"] .hdr{background:rgba(244,241,235,0.88);}
+.logo-wrap{display:flex;align-items:center;gap:12px;}
+.logo-suits{display:flex;gap:4px;font-size:1.2rem;}
+.logo-suits .s,.logo-suits .c{color:var(--text);opacity:0.7;}
+.logo-suits .h,.logo-suits .d{color:var(--red);}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:4px;color:var(--gold);line-height:1;}
+.logo em{color:var(--red);font-style:normal;}
+.logo-sub{font-size:0.5rem;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:2px;}
+.hdr-r{display:flex;align-items:center;gap:8px;}
+.ibtn{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;padding:5px 10px;cursor:pointer;border-radius:6px;letter-spacing:2px;}
+.ibtn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ROOM BADGE */
+.room-badge{display:none;align-items:center;gap:6px;background:var(--card);border:1px solid var(--gold);border-radius:8px;padding:4px 10px;cursor:pointer;}
+.room-badge.show{display:flex;}
+.room-badge:hover{border-color:var(--gold);filter:brightness(1.05);}
+.room-badge-inner{display:flex;flex-direction:column;}
+.room-badge-role{font-size:0.45rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.room-badge-code{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;color:var(--gold);}
+
+/* THEME TOGGLE */
+.theme-toggle{position:relative;width:52px;height:28px;background:var(--card);border:1px solid var(--border);border-radius:20px;cursor:pointer;display:flex;align-items:center;padding:3px;flex-shrink:0;outline:none;}
+.theme-toggle:hover{border-color:var(--gold);}
+.theme-toggle-thumb{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);background:var(--gold);box-shadow:0 1px 4px var(--shadow);transform:translateX(0);user-select:none;}
+[data-theme="light"] .theme-toggle-thumb{transform:translateX(24px);}
+.hbg{display:flex;flex-direction:column;gap:5px;width:34px;height:34px;background:transparent;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:8px;justify-content:center;}
+.hbg:hover{border-color:var(--gold);}
+.hbg span{display:block;height:2px;background:var(--text);border-radius:2px;transition:all 0.3s;}
+.hbg.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hbg.open span:nth-child(2){opacity:0;}
+.hbg.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+/* SIDEBAR */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:40;opacity:0;pointer-events:none;transition:opacity 0.3s;backdrop-filter:blur(4px);}
+.ov.show{opacity:1;pointer-events:all;}
+[data-theme="light"] .ov{background:rgba(0,0,0,0.4);}
+.sbd{position:fixed;top:0;right:0;width:300px;height:100vh;background:var(--surf);border-left:1px solid var(--border);z-index:50;transform:translateX(100%);transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;box-shadow:-4px 0 24px var(--shadow);}
+.sbd.open{transform:translateX(0);}
+.sbd-hd{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sbd-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:var(--gold);}
+.sbd-x{background:transparent;border:none;color:var(--muted);font-size:1rem;cursor:pointer;}
+.sbd-x:hover{color:var(--text);}
+.sbd-sub{font-size:0.5rem;letter-spacing:2px;color:var(--muted);padding:6px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sbd-body{flex:1;overflow-y:auto;padding:10px;}
+.sbd-empty{text-align:center;color:var(--muted);padding:32px 12px;font-size:0.68rem;letter-spacing:2px;}
+.hc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;}
+.hc:hover{border-color:var(--gold);}
+.hc-top{display:flex;justify-content:space-between;margin-bottom:8px;}
+.hc-d,.hc-m{font-size:0.56rem;color:var(--muted);}
+.hc-ps{display:flex;flex-wrap:wrap;gap:4px;}
+.hc-p{display:flex;align-items:center;gap:3px;background:var(--surf);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:0.62rem;}
+.hc-p.win{border-color:var(--gold);}
+.hc-p.win .hc-pn{color:var(--gold);}
+.hc-pn{font-weight:600;}
+.hc-sc{color:var(--muted);}
+
+/* SCREENS */
+.scr{display:none;position:relative;z-index:1;}
+.scr.on{display:block;}
+
+/* LOBBY */
+.lobby{max-width:480px;margin:40px auto;padding:0 18px;}
+.lobby-card{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:16px;box-shadow:0 2px 16px var(--shadow);position:relative;overflow:hidden;}
+.lobby-card::before{position:absolute;top:-20px;right:-20px;font-size:7rem;opacity:0.04;pointer-events:none;line-height:1;}
+.lobby-card.lc-new::before{content:'♠';}
+.lobby-card.lc-join::before{content:'♥';}
+.lby-t{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:4px;color:var(--gold);margin-bottom:4px;}
+.lby-d{color:var(--muted);font-size:0.65rem;letter-spacing:1px;margin-bottom:20px;}
+.fl{font-size:0.58rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:8px;}
+.lby-btn{width:100%;padding:13px;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;cursor:pointer;border-radius:10px;margin-top:4px;}
+.lby-btn.primary{background:var(--gold);color:#0d1117;box-shadow:0 4px 20px var(--glow);}
+.lby-btn.primary:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.lby-btn.secondary{background:var(--card);color:var(--text);border:1px solid var(--border);}
+.lby-btn.secondary:hover{border-color:var(--gold);color:var(--gold);}
+.code-input{width:100%;background:var(--card);border:2px solid var(--border);color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:12px;padding:12px 16px;border-radius:10px;outline:none;text-align:center;text-transform:uppercase;}
+.code-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--glow);}
+.code-input::placeholder{color:var(--border);letter-spacing:8px;}
+
+/* SETUP */
+.su{max-width:520px;margin:36px auto;padding:0 18px;}
+.su-card{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;box-shadow:0 2px 16px var(--shadow);}
+.su-card::before{position:absolute;top:-30px;right:-30px;font-size:8rem;opacity:0.04;pointer-events:none;line-height:1;}
+.su-card.c1::before{content:'♠';}
+.su-card.c2::before{content:'♥';}
+.su-t{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:4px;color:var(--gold);margin-bottom:4px;}
+.su-d{color:var(--muted);font-size:0.67rem;letter-spacing:1px;margin-bottom:24px;}
+.cnt-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;}
+.cnt-btn{aspect-ratio:1;background:var(--card);border:2px solid var(--border);color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1.6rem;cursor:pointer;border-radius:10px;}
+.cnt-btn:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px);}
+.cnt-btn.sel{border-color:var(--gold);background:rgba(240,192,64,0.12);color:var(--gold);box-shadow:0 0 20px var(--glow);}
+[data-theme="light"] .cnt-btn.sel{background:rgba(200,134,10,0.1);}
+.ng{display:grid;gap:8px;}
+.nr{display:flex;align-items:center;gap:10px;}
+.nn{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);width:22px;text-align:center;flex-shrink:0;}
+.ni{flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:0.8rem;padding:9px 12px;border-radius:8px;outline:none;}
+.ni:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--glow);}
+.ni::placeholder{color:var(--muted);}
+.go-btn{width:100%;padding:14px;background:var(--gold);border:none;color:#0d1117;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:4px;cursor:pointer;border-radius:10px;margin-top:16px;box-shadow:0 4px 20px var(--glow);}
+.go-btn:hover{filter:brightness(1.08);transform:translateY(-2px);}
+
+/* GAME */
+.gc{max-width:820px;margin:0 auto;padding:14px;}
+
+/* SYNC BAR */
+.sync-bar{display:flex;align-items:center;gap:6px;font-size:0.54rem;color:var(--muted);margin-bottom:8px;letter-spacing:1px;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.sync-dot.ok{background:var(--green);box-shadow:0 0 6px rgba(63,185,80,0.5);}
+.sync-dot.err{background:var(--red);}
+.sync-dot.spin{background:var(--gold);animation:pdot 0.8s ease infinite alternate;}
+@keyframes pdot{from{opacity:0.3}to{opacity:1}}
+
+/* SCOREBOARD */
+.scoreboard{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:10px;}
+.pc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 12px;position:relative;overflow:hidden;}
+.pc::after{content:attr(data-suit);position:absolute;bottom:-8px;right:2px;font-size:2.5rem;opacity:0.06;line-height:1;pointer-events:none;}
+.pc.playing{border-color:var(--green);box-shadow:0 0 14px rgba(63,185,80,0.15);}
+.pc.waiting{opacity:0.45;}
+.pc.out{opacity:0.18;border-color:var(--red);}
+.pc-suit{position:absolute;top:7px;right:9px;font-size:0.85rem;opacity:0.5;}
+.pc-suit.red{color:var(--red);}
+.pc-name{font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;padding-right:20px;}
+.pc-score{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--gold);line-height:1;}
+.pc-score.hi{color:var(--red);animation:shk 0.3s;}
+@keyframes shk{0%,100%{transform:translateX(0)}30%{transform:translateX(-3px)}70%{transform:translateX(3px)}}
+.pc-st{font-size:0.44rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-top:3px;}
+
+/* GUEST BANNER */
+.guest-banner{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:10px;text-align:center;}
+.guest-banner-icon{font-size:2.2rem;margin-bottom:8px;}
+.guest-banner-t{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:4px;color:var(--muted);margin-bottom:6px;}
+.guest-banner-d{font-size:0.6rem;color:var(--muted);letter-spacing:1px;line-height:1.8;}
+.guest-code{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:6px;color:var(--gold);margin-top:10px;cursor:pointer;}
+.guest-code:hover{text-decoration:underline;}
+
+/* QUEUE */
+.qi{font-size:0.56rem;color:var(--muted);margin-bottom:10px;letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.qi-icon{color:var(--gold);font-size:0.7rem;}
+.qi span{color:var(--green);}
+
+/* ROUND LOG */
+.rlog{background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px;}
+.rlog-h{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);}
+.rlog-title{font-size:0.54rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+.rlog-hint{font-size:0.5rem;color:var(--muted);}
+.rlog-b{max-height:180px;overflow-y:auto;padding:5px 7px;}
+.rl-row{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;margin-bottom:2px;}
+.rl-row:hover{background:rgba(128,128,128,0.06);}
+.rl-row.rl-editing{background:rgba(240,192,64,0.08);border:1px solid rgba(240,192,64,0.2);}
+.rl-num{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--muted);min-width:22px;text-align:right;flex-shrink:0;}
+.rl-entries{flex:1;display:flex;flex-wrap:wrap;gap:4px;}
+.rl-cell{font-size:0.62rem;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:2px 7px;white-space:nowrap;}
+.rl-ebtn{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:0.65rem;padding:2px 6px;border-radius:4px;cursor:pointer;flex-shrink:0;}
+.rl-ebtn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* INPUT AREA */
+.ia{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
+.slots{display:grid;gap:8px;margin-bottom:12px;}
+.slot{background:var(--card);border:2px solid var(--border);border-radius:10px;cursor:pointer;overflow:hidden;position:relative;}
+.slot::before{content:attr(data-suit);position:absolute;top:6px;left:8px;font-size:0.9rem;opacity:0.2;line-height:1;}
+.slot::after{content:attr(data-suit);position:absolute;bottom:6px;right:8px;font-size:0.9rem;opacity:0.2;line-height:1;transform:rotate(180deg);}
+.slot.red-suit::before,.slot.red-suit::after{color:var(--red);}
+.slot:hover{border-color:var(--muted);transform:translateY(-1px);}
+.slot.active{border-color:var(--green);box-shadow:0 0 14px rgba(63,185,80,0.2);}
+.slot-name{padding:6px 32px 4px;font-size:0.5rem;letter-spacing:2px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+.slot-num{font-family:'Bebas Neue',sans-serif;font-size:3.6rem;letter-spacing:4px;padding:6px 16px 2px;line-height:1;color:var(--border);min-height:62px;display:flex;align-items:center;justify-content:center;}
+.slot-num.v{color:var(--text);}
+.slot-num.zero{color:var(--green);text-shadow:0 0 20px rgba(63,185,80,0.5);}
+.slot-num.dbl{color:var(--green);}
+.slot-num.tri{color:var(--purple);}
+.slot-num.boom{color:var(--red);animation:pulse-r 0.5s ease;}
+@keyframes pulse-r{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.slot-hint{font-size:0.5rem;color:var(--muted);padding:2px 14px 8px;min-height:18px;text-align:center;}
+.np-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.np-suits{font-size:1rem;opacity:0.4;letter-spacing:2px;}
+.np-lbl{font-size:0.54rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+.np-lbl span{color:var(--green);font-weight:600;}
+.numgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:7px;}
+.nb{padding:10px 4px;background:var(--card);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:0.9rem;font-weight:600;cursor:pointer;border-radius:8px;user-select:none;}
+.nb:hover{border-color:var(--gold);color:var(--gold);background:var(--bg);transform:translateY(-1px);}
+.nb:active{transform:scale(0.93);}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.act{padding:11px;border:none;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:3px;cursor:pointer;border-radius:8px;}
+.act.clr{background:var(--card);color:var(--muted);border:1px solid var(--border);}
+.act.clr:hover{color:var(--red);border-color:var(--red);}
+.act.reg{background:var(--gold);color:#0d1117;box-shadow:0 3px 14px var(--glow);}
+.act.reg:hover{filter:brightness(1.08);transform:translateY(-1px);}
+
+/* LOG */
+.logl{background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.logl-h{padding:8px 14px;border-bottom:1px solid var(--border);font-size:0.54rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:6px;}
+.logl-h-suit{opacity:0.4;}
+.logl-b{max-height:110px;overflow-y:auto;padding:3px 0;}
+.le{padding:4px 14px;font-size:0.66rem;border-bottom:1px solid rgba(128,128,128,0.06);display:flex;gap:10px;animation:fi 0.28s ease;}
+@keyframes fi{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+.lt{color:var(--muted);flex-shrink:0;font-size:0.6rem;}
+.lx .g{color:var(--green);}
+.lx .r{color:var(--red);}
+.lx .a{color:var(--gold);font-weight:600;}
+
+/* WINNER */
+.wo{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(12px);}
+[data-theme="light"] .wo{background:rgba(0,0,0,0.75);}
+.wo.show{display:flex;}
+.wbox{background:var(--surf);border:2px solid var(--gold);border-radius:20px;padding:44px 40px;text-align:center;max-width:360px;width:90%;box-shadow:0 0 80px var(--glow);animation:pop 0.45s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;overflow:hidden;}
+.wbox::before{content:'♠ ♥ ♦ ♣';position:absolute;top:12px;left:0;right:0;text-align:center;font-size:0.8rem;opacity:0.15;letter-spacing:8px;}
+.wbox::after{content:'♣ ♦ ♥ ♠';position:absolute;bottom:12px;left:0;right:0;text-align:center;font-size:0.8rem;opacity:0.15;letter-spacing:8px;}
+@keyframes pop{from{transform:scale(0.3) rotate(-5deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+.wcrown{font-size:3.5rem;margin-bottom:6px;animation:bounce 1s ease infinite alternate;}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+.wlbl{font-size:0.6rem;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
+.wname{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;color:var(--gold);margin-bottom:5px;}
+.wscore{font-size:0.82rem;color:var(--muted);margin-bottom:24px;}
+.wbtn{padding:10px 28px;background:var(--gold);border:none;color:#0d1117;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:4px;cursor:pointer;border-radius:8px;margin:4px;}
+.wbtn:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.wbtn.sec{background:transparent;color:var(--text);border:1px solid var(--border);}
+.wbtn.sec:hover{border-color:var(--gold);color:var(--gold);}
+
+/* RULES */
+.ro{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:50;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+[data-theme="light"] .ro{background:rgba(0,0,0,0.55);}
+.ro.show{display:flex;}
+.rbox{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:400px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px var(--shadow);}
+.rtitle{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:3px;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.rtitle-suits{font-size:1rem;opacity:0.5;letter-spacing:4px;}
+.ri{display:flex;gap:9px;margin-bottom:9px;font-size:0.72rem;line-height:1.65;}
+.ric{flex-shrink:0;width:18px;text-align:center;}
+.rclose{margin-top:16px;width:100%;padding:10px;background:var(--card);border:1px solid var(--border);color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:3px;cursor:pointer;border-radius:8px;}
+.rclose:hover{border-color:var(--gold);color:var(--gold);}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:var(--surf);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surf);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:8px;font-size:0.72rem;letter-spacing:1px;z-index:200;pointer-events:none;max-width:86vw;text-align:center;box-shadow:0 4px 20px var(--shadow);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div class="app">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo-wrap">
+    <div class="logo-suits"><span class="s">♠</span><span class="h">♥</span><span class="d">♦</span><span class="c">♣</span></div>
+    <div>
+      <div class="logo">13<em>—</em>ТОГЛООМ</div>
+      <div class="logo-sub">Карт тоглоом · Олон тоглогч</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="room-badge" id="roomBadge" onclick="copyCode()">
+      <div class="room-badge-inner">
+        <span class="room-badge-role" id="roomRole">HOST</span>
+        <span class="room-badge-code" id="roomCodeDisplay">----</span>
+      </div>
+      <span style="font-size:0.8rem;color:var(--muted)">⎘</span>
+    </div>
+    <button class="ibtn" onclick="showRules()">? ДҮРЭМ</button>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <div class="theme-toggle-thumb" id="themeThumb">🌙</div>
+    </button>
+    <button class="hbg" id="hbgBtn" onclick="toggleSB()"><span></span><span></span><span></span></button>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="ov" id="sbOv" onclick="closeSB()"></div>
+<div class="sbd" id="sbDraw">
+  <div class="sbd-hd"><div class="sbd-title">♠ ТОГЛОГЧ БҮРТГЭЛ</div><button class="sbd-x" onclick="closeSB()">✕</button></div>
+  <div class="sbd-sub">// сүүлийн 24 цагийн бүртгэл</div>
+  <div class="sbd-body" id="sbBody"><div class="sbd-empty">// бүртгэл байхгүй байна</div></div>
+</div>
+
+<!-- LOBBY -->
+<div class="scr on" id="scrLobby">
+  <div class="lobby">
+    <div class="lobby-card lc-new">
+      <div class="lby-t">ШИНЭ ТОГЛООМ</div>
+      <div class="lby-d">// тоглоом үүсгэж, кодоо найздаа явуул</div>
+      <button class="lby-btn primary" onclick="goCreate()">♠ ТОГЛООМ ҮҮСГЭХ</button>
+    </div>
+    <div class="lobby-card lc-join">
+      <div class="lby-t">НЭГДЭХ</div>
+      <div class="lby-d">// найзны кодыг оруулж нэгд — зөвхөн харах горим</div>
+      <label class="fl">♥ — Өрөөний код (4 үсэг)</label>
+      <input class="code-input" id="joinCodeInput" maxlength="4" placeholder="····" autocomplete="off"
+        oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'')"
+        onkeydown="if(event.key==='Enter')doJoin()">
+      <button class="lby-btn secondary" onclick="doJoin()" style="margin-top:10px">♥ НЭГДЭХ</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div class="scr" id="scrSetup">
+  <div class="su">
+    <div class="su-card c1">
+      <div class="su-t">ТОГЛОГЧИД</div>
+      <div class="su-d">// тоглогчийн тоо болон нэрийг оруулна уу</div>
+      <label class="fl">♣ — Тоглогчийн тоо сонгох</label>
+      <div class="cnt-grid">
+        <button class="cnt-btn" onclick="pickN(2,this)">2</button>
+        <button class="cnt-btn" onclick="pickN(3,this)">3</button>
+        <button class="cnt-btn" onclick="pickN(4,this)">4</button>
+        <button class="cnt-btn" onclick="pickN(5,this)">5</button>
+        <button class="cnt-btn" onclick="pickN(6,this)">6</button>
+        <button class="cnt-btn" onclick="pickN(7,this)">7</button>
+        <button class="cnt-btn" onclick="pickN(8,this)">8</button>
+        <button class="cnt-btn" onclick="pickN(9,this)">9</button>
+        <button class="cnt-btn" onclick="pickN(10,this)">10</button>
+      </div>
+    </div>
+    <div class="su-card c2" id="namesBox" style="display:none">
+      <label class="fl">♥ — Тоглогчдын нэр</label>
+      <div class="ng" id="namesGrid"></div>
+      <button class="go-btn" onclick="startGame()">♠ ТОГЛООМ ЭХЛҮҮЛЭХ ♠</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="scr" id="scrGame">
+  <div class="gc">
+    <div class="sync-bar">
+      <div class="sync-dot spin" id="syncDot"></div>
+      <span id="syncLabel">холбогдож байна...</span>
+    </div>
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="qi" id="queueInfo"></div>
+    <div class="rlog">
+      <div class="rlog-h">
+        <span class="rlog-title">♦ бүртгэлийн жагсаалт</span>
+        <span class="rlog-hint" id="rlogHint"></span>
+      </div>
+      <div class="rlog-b" id="roundLogList"><div style="color:var(--muted);font-size:0.6rem;padding:6px 2px;letter-spacing:1px;">// бүртгэл хоосон</div></div>
+    </div>
+
+    <!-- HOST ONLY -->
+    <div id="hostArea" style="display:none">
+      <div class="ia">
+        <div class="slots" id="slots"></div>
+        <div class="np-header">
+          <span class="np-suits">♠♥♦♣</span>
+          <div class="np-lbl">тоо оруулах — <span id="npLabel">талбар дарна уу</span></div>
+        </div>
+        <div class="numgrid">
+          <button class="nb" onclick="tn('1')">1</button>
+          <button class="nb" onclick="tn('2')">2</button>
+          <button class="nb" onclick="tn('3')">3</button>
+          <button class="nb" onclick="tn('4')">4</button>
+          <button class="nb" onclick="tn('5')">5</button>
+          <button class="nb" onclick="tn('6')">6</button>
+          <button class="nb" onclick="tn('7')">7</button>
+          <button class="nb" onclick="tn('8')">8</button>
+          <button class="nb" onclick="tn('9')">9</button>
+          <button class="nb" onclick="tn('0')" style="color:var(--green);border-color:rgba(63,185,80,0.4)">0 ★</button>
+          <button class="nb" onclick="tn('10')">10</button>
+          <button class="nb" onclick="tn('11')">11</button>
+          <button class="nb" onclick="tn('12')">12</button>
+          <button class="nb" onclick="tn('13')" style="color:var(--gold);border-color:rgba(240,192,64,0.3)">13</button>
+          <button class="nb" onclick="clearSlot()" style="color:var(--red)">⌫</button>
+        </div>
+        <div class="acts">
+          <button class="act clr" onclick="clearSlot()">ЦЭВЭРЛЭХ</button>
+          <button class="act reg" onclick="doRegister()">♦ БҮРТГЭХ</button>
+        </div>
+      </div>
+      <div class="logl">
+        <div class="logl-h"><span class="logl-h-suit">♣</span> тоглоомын бүртгэл</div>
+        <div class="logl-b" id="logB"></div>
+      </div>
+    </div>
+
+    <!-- GUEST ONLY -->
+    <div id="guestArea" style="display:none">
+      <div class="guest-banner">
+        <div class="guest-banner-icon">👁️</div>
+        <div class="guest-banner-t">ХАРАГЧ ГОРИМ</div>
+        <div class="guest-banner-d">
+          Оноо бичих зөвхөн host-д байна<br>
+          Дэлгэц автоматаар шинэчлэгдэнэ
+        </div>
+        <div class="guest-code" onclick="copyCode()" title="Хуулах">⎘ <span id="guestCodeShow"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WINNER -->
+<div class="wo" id="winnerOv">
+  <div class="wbox">
+    <div class="wcrown">🏆</div>
+    <div class="wlbl">— Нийт Ялагч —</div>
+    <div class="wname" id="winName"></div>
+    <div class="wscore" id="winScore"></div>
+    <div><button class="wbtn sec" onclick="endGame()">ТОГЛООМ ДУУСГАХ</button></div>
+  </div>
+</div>
+
+<!-- RULES -->
+<div class="ro" id="rulesOv">
+  <div class="rbox">
+    <div class="rtitle"><span class="rtitle-suits">♠♥♦♣</span> ДҮРЭМ</div>
+    <div class="ri"><span class="ric">🔀</span><span>Тоглоом эхлэхэд дараалал <b>рандомоор</b> тогтоно.</span></div>
+    <div class="ri"><span class="ric">🎴</span><span>Нэг тоглолтод <b>4 тоглогч</b> тоглоно. Оноо <b>нэмэгдэж л явна.</b></span></div>
+    <div class="ri"><span class="ric" style="color:var(--green)">★</span><span><b style="color:var(--green)">0</b> = хожлоо. Оноо хэвээр. Тэр хүн <b>гарч, дараалалын сүүлд</b> очно.</span></div>
+    <div class="ri"><span class="ric">🔄</span><span>Хожсоны оронд <b>тоглоогүй дараагийн хүн</b> орно.</span></div>
+    <div class="ri"><span class="ric">💥</span><span>Оноо <b style="color:var(--gold)">30+</b> болбол <b style="color:var(--red)">хасагдана.</b></span></div>
+    <div class="ri"><span class="ric">✖️</span><span><b style="color:var(--green)">10–12 мод</b> → ×2 &nbsp;|&nbsp; <b style="color:var(--purple)">13 мод</b> → ×3</span></div>
+    <div class="ri"><span class="ric">♚</span><span><b>Ялагч:</b> бусад бүгд хасагдаж ганцаараа үлдсэн хүн.</span></div>
+    <button class="rclose" onclick="hideRules()">ХААХ</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ══════════════════════════
+   SUPABASE CONFIG
+   supabase.com → Project → Settings → API
+   ══════════════════════════ */
+const SUPABASE_URL = 'https://pmmidzhwdilmwzpizoxo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Bc1GvIp_yHxCAuq3KaQX-A_f8FwzSMu';
+
+/* ── SUPABASE HELPERS ── */
+const SB = {
+  headers(){
+    return {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates'
+    };
+  },
+  async get(code){
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/rooms?code=eq.${code}&select=state`,
+      { headers: this.headers() }
+    );
+    const d = await r.json();
+    return d[0]?.state ?? null;
+  },
+  async upsert(code, state){
+    await fetch(`${SUPABASE_URL}/rest/v1/rooms`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ code, state, updated_at: new Date().toISOString() })
+    });
+  },
+  /* Realtime websocket */
+  subscribe(code, onUpdate){
+    const wsUrl = SUPABASE_URL.replace('https','wss')
+      + `/realtime/v1/websocket?apikey=${SUPABASE_KEY}&vsn=1.0.0`;
+    const ws = new WebSocket(wsUrl);
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        topic: `realtime:public:rooms:code=eq.${code}`,
+        event: 'phx_join', payload:{}, ref:'1'
+      }));
+    };
+    ws.onmessage = e => {
+      try {
+        const msg = JSON.parse(e.data);
+        const st = msg.payload?.record?.state ?? msg.payload?.new?.state;
+        if(st && (msg.event==='UPDATE'||msg.event==='INSERT')) onUpdate(st);
+      } catch(_){}
+    };
+    ws.onerror = () => setSyncStatus('err','Realtime алдаа — polling горим');
+    return ws;
+  }
+};
+
+/* ── CANVAS BACKGROUND ── */
+(function(){
+  const cv=document.getElementById('bgCanvas'),ctx=cv.getContext('2d');
+  const suits=['♠','♥','♦','♣'],cards=[];
+  const resize=()=>{cv.width=innerWidth;cv.height=innerHeight;};
+  resize();addEventListener('resize',resize);
+  for(let i=0;i<28;i++) cards.push({
+    x:Math.random()*innerWidth,y:Math.random()*innerHeight,
+    s:suits[Math.floor(Math.random()*4)],sz:Math.random()*40+18,
+    vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.2,
+    a:Math.random()*Math.PI*2,va:(Math.random()-.5)*.004,op:Math.random()*.4+.05
+  });
+  (function draw(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    const dark=document.documentElement.getAttribute('data-theme')==='dark';
+    for(const c of cards){
+      ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.a);ctx.font=`${c.sz}px serif`;
+      const isR=c.s==='♥'||c.s==='♦';
+      ctx.fillStyle=dark?(isR?`rgba(224,92,75,${c.op})`:`rgba(200,210,220,${c.op})`)
+                       :(isR?`rgba(192,57,43,${c.op})`:`rgba(30,40,60,${c.op})`);
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(c.s,0,0);ctx.restore();
+      c.x+=c.vx;c.y+=c.vy;c.a+=c.va;
+      if(c.x<-60)c.x=cv.width+60; if(c.x>cv.width+60)c.x=-60;
+      if(c.y<-60)c.y=cv.height+60;if(c.y>cv.height+60)c.y=-60;
+    }
+    requestAnimationFrame(draw);
+  })();
+})();
+
+/* ── THEME ── */
+(function(){
+  const s=localStorage.getItem('13gvTheme')||'dark';
+  document.documentElement.setAttribute('data-theme',s);
+  const t=document.getElementById('themeThumb');
+  if(t) t.textContent=s==='dark'?'🌙':'☀️';
+})();
+function toggleTheme(){
+  const h=document.documentElement,cur=h.getAttribute('data-theme'),next=cur==='dark'?'light':'dark';
+  h.setAttribute('data-theme',next);localStorage.setItem('13gvTheme',next);
+  document.getElementById('themeThumb').textContent=next==='dark'?'🌙':'☀️';
+  document.getElementById('themeColor').content=next==='dark'?'#0d1117':'#f4f1eb';
+}
+
+/* ── CONSTANTS ── */
+const SUITS=['♠','♥','♦','♣'],IS_RED=[false,true,true,false];
+
+/* ── APP STATE ── */
+let ROLE=null,ROOM_CODE=null,WS=null,POLL=null;
+let G={players:[],queue:[],hasWon:false,vals:['','','',''],activeSlot:0,roundLog:[],roundNum:0,editingRound:null,_editSeat:null,gameActive:false};
+
+const getSeat=()=>G.queue.slice(0,Math.min(4,G.queue.length));
+const cnt=()=>getSeat().length;
+const mul=n=>n===13?n*3:n>=10?n*2:n;
+
+/* ── SYNC STATUS ── */
+function setSyncStatus(state,label){
+  const d=document.getElementById('syncDot'),l=document.getElementById('syncLabel');
+  if(!d)return;
+  d.className='sync-dot '+(state==='ok'?'ok':state==='err'?'err':'spin');
+  if(l&&label)l.textContent=label;
+}
+
+/* ── ROOM ── */
+function genCode(){
+  const c='ABCDEFGHJKLMNPQRSTUVWXYZ';
+  return Array.from({length:4},()=>c[Math.floor(Math.random()*c.length)]).join('');
+}
+function showRoomBadge(code,role){
+  ROOM_CODE=code;ROLE=role;
+  document.getElementById('roomCodeDisplay').textContent=code;
+  document.getElementById('roomRole').textContent=role==='host'?'♠ HOST':'♥ GUEST';
+  document.getElementById('roomBadge').classList.add('show');
+}
+function copyCode(){
+  if(!ROOM_CODE)return;
+  navigator.clipboard.writeText(ROOM_CODE).then(()=>toast(`📋 Код хуулагдлаа: ${ROOM_CODE}`));
+}
+
+/* ── LOBBY ACTIONS ── */
+async function goCreate(){
+  const code=genCode();
+  showRoomBadge(code,'host');
+  setSyncStatus('spin','өрөө үүсгэж байна...');
+  try{
+    await SB.upsert(code,{phase:'setup',players:[],queue:[],roundLog:[],roundNum:0,hasWon:false});
+    setSyncStatus('ok',`Өрөө үүслээ · ${code}`);
+    toast(`♠ Өрөөний код: ${code}`);
+  }catch(e){
+    setSyncStatus('err','Supabase тохируулаагүй');
+    toast('⚠️ SUPABASE_URL болон KEY-г тохируулна уу!');
+  }
+  show('scrSetup');
+  setHostMode();
+}
+
+async function doJoin(){
+  const code=document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  if(code.length!==4){toast('4 үсэгтэй код оруулна уу!');return;}
+  setSyncStatus('spin','холбогдож байна...');
+  try{
+    const state=await SB.get(code);
+    if(!state){toast(`⚠️ "${code}" өрөө олдсонгүй`);setSyncStatus('err','Өрөө байхгүй');return;}
+    showRoomBadge(code,'guest');
+    applyRemoteState(state);
+    setGuestMode();
+    show('scrGame');
+    renderAll();
+    setSyncStatus('ok',`${code} өрөөнд нэгдлээ`);
+    toast(`♥ ${code} өрөөнд нэгдлээ!`);
+    startPolling(code);
+    try{ WS=SB.subscribe(code,handleRemoteState); }catch(_){}
+  }catch(e){
+    setSyncStatus('err','Холбогдож чадсангүй');
+    toast('⚠️ Холбогдож чадсангүй');
+  }
+}
+
+/* ── REALTIME ── */
+function startPolling(code){
+  clearInterval(POLL);
+  POLL=setInterval(async()=>{
+    try{
+      const st=await SB.get(code);
+      if(st) handleRemoteState(st);
+    }catch(_){setSyncStatus('err','Холболт тасарсан');}
+  },3000);
+}
+
+function handleRemoteState(st){
+  applyRemoteState(st);
+  renderAll();
+  setSyncStatus('ok','Шинэчлэгдлээ');
+  if(st.phase==='done'&&st.winner) showWinner(st.winner);
+}
+
+function applyRemoteState(st){
+  G.players  = st.players  ||[];
+  G.queue    = st.queue    ||[];
+  G.roundLog = st.roundLog ||[];
+  G.roundNum = st.roundNum ||0;
+  G.hasWon   = st.hasWon  ||false;
+  G.gameActive=st.phase==='playing';
+  if(st.phase==='playing'&&ROLE==='guest') show('scrGame');
+}
+
+/* ── PUSH TO SUPABASE ── */
+async function pushState(extra={}){
+  if(!ROOM_CODE||ROLE!=='host')return;
+  setSyncStatus('spin','хадгалж байна...');
+  try{
+    await SB.upsert(ROOM_CODE,{
+      phase:G.gameActive?'playing':'setup',
+      players:G.players, queue:G.queue,
+      roundLog:G.roundLog, roundNum:G.roundNum,
+      hasWon:G.hasWon, ...extra
+    });
+    setSyncStatus('ok','Хадгалагдлаа');
+  }catch(e){setSyncStatus('err','Хадгалалт алдаатай');}
+}
+
+/* ── UI MODE ── */
+function setHostMode(){
+  document.getElementById('hostArea').style.display='block';
+  document.getElementById('guestArea').style.display='none';
+  document.getElementById('rlogHint').textContent='✏️ засах боломжтой';
+}
+function setGuestMode(){
+  document.getElementById('hostArea').style.display='none';
+  document.getElementById('guestArea').style.display='block';
+  document.getElementById('rlogHint').textContent='👁 зөвхөн харах';
+  const gs=document.getElementById('guestCodeShow');
+  if(gs)gs.textContent=ROOM_CODE||'';
+}
+
+/* ── HISTORY SIDEBAR ── */
+const SK='13gvD';
+function saveH(r){let h=[];try{h=JSON.parse(localStorage.getItem(SK))||[];}catch(_){}h=h.filter(x=>Date.now()-x.ts<86400000);h.unshift(r);localStorage.setItem(SK,JSON.stringify(h));}
+function loadH(){let h=[];try{h=JSON.parse(localStorage.getItem(SK))||[];}catch(_){}return h.filter(x=>Date.now()-x.ts<86400000);}
+function toggleSB(){document.getElementById('sbDraw').classList.contains('open')?closeSB():openSB();}
+function openSB(){document.getElementById('sbDraw').classList.add('open');document.getElementById('sbOv').classList.add('show');document.getElementById('hbgBtn').classList.add('open');renderSB();}
+function closeSB(){document.getElementById('sbDraw').classList.remove('open');document.getElementById('sbOv').classList.remove('show');document.getElementById('hbgBtn').classList.remove('open');}
+function renderSB(){
+  const body=document.getElementById('sbBody'),h=loadH();
+  if(!h.length){body.innerHTML='<div class="sbd-empty">// бүртгэл байхгүй байна</div>';return;}
+  body.innerHTML=h.map(r=>{
+    const d=new Date(r.ts);
+    const ds=`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const ps=r.players.map(p=>`<div class="hc-p${p.name===r.winner?' win':''}">
+      ${p.name===r.winner?'🏆 ':''}<span class="hc-pn">${p.name}</span><span class="hc-sc">&nbsp;${p.score}</span></div>`).join('');
+    return `<div class="hc"><div class="hc-top"><span class="hc-d">${ds}</span><span class="hc-m">${r.players.length}х</span></div><div class="hc-ps">${ps}</div></div>`;
+  }).join('');
+}
+
+/* ── SETUP ── */
+let selN=0;
+function pickN(n,btn){
+  selN=n;
+  document.querySelectorAll('.cnt-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  const g=document.getElementById('namesGrid');g.innerHTML='';
+  for(let i=1;i<=n;i++){
+    const s=SUITS[(i-1)%4],isR=IS_RED[(i-1)%4];
+    g.innerHTML+=`<div class="nr"><span class="nn" style="color:${isR?'var(--red)':'var(--muted)'}">${s}</span><input class="ni" type="text" id="p${i}" placeholder="Тоглогч ${i}" maxlength="12"></div>`;
+  }
+  document.getElementById('namesBox').style.display='block';
+}
+
+async function startGame(){
+  if(!selN){toast('Тоглогчийн тоо сонгоно уу!');return;}
+  const players=[];
+  for(let i=1;i<=selN;i++){
+    const el=document.getElementById('p'+i);
+    players.push({name:(el?el.value.trim():'')||`Тоглогч ${i}`,score:0,eliminated:false,suit:SUITS[(i-1)%4],red:IS_RED[(i-1)%4]});
+  }
+  for(let i=players.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[players[i],players[j]]=[players[j],players[i]];}
+  G.players=players;G.queue=players.map((_,i)=>i);
+  G.hasWon=false;G.roundLog=[];G.roundNum=0;G.gameActive=true;
+  G.vals=['','','',''];G.activeSlot=0;G.editingRound=null;G._editSeat=null;
+  show('scrGame');renderAll();
+  sysLog(`Тоглоом эхэллээ — ${players.length} тоглогч`);
+  sysLog(`🔀 ${players.map(p=>`${p.suit}${p.name}`).join(' ')}`);
+  await pushState({phase:'playing'});
+  startPolling(ROOM_CODE);
+  try{WS=SB.subscribe(ROOM_CODE,handleRemoteState);}catch(_){}
+  setSyncStatus('ok',`Тоглоом явагдаж байна · ${ROOM_CODE}`);
+}
+
+/* ── INPUT (host only) ── */
+function tn(v){
+  if(ROLE!=='host')return;
+  const s=G.activeSlot,c=cnt();
+  if(s<0||s>=c){toast('Талбар дарна уу!');return;}
+  if(['10','11','12','13'].includes(v)){G.vals[s]=v;}
+  else if(v==='0'){G.vals[s]='0';}
+  else{if(G.vals[s]==='0')return;if(G.vals[s].length>=2)return;G.vals[s]+=v;}
+  renderSlots();
+}
+function clearSlot(){if(ROLE!=='host'||G.activeSlot<0)return;G.vals[G.activeSlot]=G.vals[G.activeSlot].slice(0,-1);renderSlots();}
+function setSlot(s){if(ROLE!=='host')return;G.activeSlot=s;renderSlots();}
+
+/* ── REGISTER ── */
+async function doRegister(){
+  if(ROLE!=='host')return;
+  if(G.editingRound!==null){await applyEdit();return;}
+  const seat=getSeat(),c=seat.length;
+  for(let s=0;s<c;s++){if(G.vals[s]===''){toast(`${G.players[seat[s]].name}-н тоог оруулна уу!`);setSlot(s);return;}}
+  const zc=G.vals.slice(0,c).filter(v=>parseInt(v)===0).length;
+  if(zc>1){toast('Нэг тоглолтод нэг л хожно!');return;}
+  if(zc===1&&G.hasWon){toast('⛔ Аль хэдийн хожсон байна!');return;}
+
+  const entries=[];let winnerIdx=-1;const elimIdxs=[];
+  for(let s=0;s<c;s++){
+    const pIdx=seat[s],p=G.players[pIdx],raw=parseInt(G.vals[s]);
+    const e={name:p.name,pIdx,val:raw,scored:0,won:false,elim:false};
+    if(raw===0){
+      G.hasWon=true;e.won=true;winnerIdx=pIdx;
+      sysLog(`<span class="g">${p.suit}🏆 ${p.name} хожлоо!</span> оноо: ${p.score}`);
+    }else{
+      const m=mul(raw);p.score+=m;e.scored=m;
+      let lm=`<span class="a">${p.suit} ${p.name}</span> ${raw} мод`;
+      if(raw===13)lm+=` ×3=${m}`;else if(raw>=10)lm+=` ×2=${m}`;else lm+=` +${m}`;
+      lm+=` → <b>${p.score}</b>`;
+      if(p.score>=30){p.eliminated=true;e.elim=true;elimIdxs.push(pIdx);lm+=` <span class="r">ХАСАГДЛАА</span>`;}
+      sysLog(lm);
+    }
+    entries.push(e);
+  }
+  G.roundNum++;G.roundLog.push({num:G.roundNum,entries});
+  const waiting=G.queue.slice(c);
+  const stayed=seat.filter(i=>i!==winnerIdx&&!elimIdxs.includes(i));
+  G.queue=[...stayed,...waiting];
+  if(winnerIdx>=0)G.queue.push(winnerIdx);
+
+  const alive=G.players.filter(p=>!p.eliminated);
+  if(alive.length<=1){
+    const w=alive[0]||G.players[0];
+    G.gameActive=false;
+    renderAll();
+    await pushState({phase:'done',winner:{name:w.name,suit:w.suit,score:w.score}});
+    setTimeout(()=>showWinner(w),400);
+    return;
+  }
+  G.vals=['','','',''];G.hasWon=false;G.activeSlot=0;
+  renderAll();
+  await pushState();
+}
+
+/* ── ROUND LOG ── */
+function renderRoundLog(){
+  const el=document.getElementById('roundLogList');if(!el)return;
+  if(!G.roundLog.length){el.innerHTML='<div style="color:var(--muted);font-size:0.6rem;padding:6px 2px;letter-spacing:1px;">// бүртгэл хоосон</div>';return;}
+  el.innerHTML=[...G.roundLog].reverse().map((r,ri)=>{
+    const realIdx=G.roundLog.length-1-ri;
+    const isEd=G.editingRound===realIdx;
+    const cells=r.entries.map(e=>{
+      const badge=e.won?'<span style="color:var(--green)">★</span>':e.elim?'<span style="color:var(--red)">✕</span>':'';
+      return `<span class="rl-cell">${badge}<b>${e.name}</b>:${e.val}</span>`;
+    }).join('');
+    const btn=ROLE==='host'?`<button class="rl-ebtn" onclick="startEdit(${realIdx})">${isEd?'✕':'✏️'}</button>`:'';
+    return `<div class="rl-row${isEd?' rl-editing':''}"><span class="rl-num">${r.num}</span><div class="rl-entries">${cells}</div>${btn}</div>`;
+  }).join('');
+}
+
+function startEdit(idx){
+  if(ROLE!=='host')return;
+  if(G.editingRound===idx){G.editingRound=null;G._editSeat=null;G.vals=['','','',''];G.activeSlot=0;renderAll();return;}
+  G.editingRound=idx;const r=G.roundLog[idx];
+  G.vals=['','','',''];r.entries.forEach((e,s)=>{G.vals[s]=String(e.val);});
+  G._editSeat=r.entries.map(e=>e.pIdx);G.activeSlot=0;
+  renderAll();toast(`${r.num}-р бүртгэлийг засаж байна`);
+}
+
+async function applyEdit(){
+  const idx=G.editingRound,r=G.roundLog[idx],c=r.entries.length;
+  for(let s=0;s<c;s++){if(G.vals[s]===''){toast(`${r.entries[s].name}-н тоог оруулна уу!`);return;}}
+  if(G.vals.slice(0,c).filter(v=>parseInt(v)===0).length>1){toast('Нэг тоглолтод нэг л хожно!');return;}
+  r.entries.forEach(e=>{
+    if(!e.won){G.players[e.pIdx].score-=e.scored;
+      if(e.elim&&G.players[e.pIdx].score<30){G.players[e.pIdx].eliminated=false;if(!G.queue.includes(e.pIdx))G.queue.push(e.pIdx);}
+    }
+  });
+  const newEntries=[];
+  for(let s=0;s<c;s++){
+    const e=r.entries[s],p=G.players[e.pIdx],raw=parseInt(G.vals[s]);
+    const ne={name:e.name,pIdx:e.pIdx,val:raw,scored:0,won:false,elim:false};
+    if(raw===0){ne.won=true;}
+    else{const m=mul(raw);p.score+=m;ne.scored=m;if(p.score>=30){p.eliminated=true;ne.elim=true;G.queue=G.queue.filter(i=>i!==e.pIdx);}}
+    newEntries.push(ne);
+  }
+  r.entries=newEntries;G.editingRound=null;G._editSeat=null;G.vals=['','','',''];G.activeSlot=0;
+  sysLog(`✏️ ${r.num}-р бүртгэл засагдлаа`);
+  const alive=G.players.filter(p=>!p.eliminated);
+  if(alive.length<=1){renderAll();setTimeout(()=>showWinner(alive[0]||G.players[0]),400);return;}
+  renderAll();toast(`${r.num}-р бүртгэл засагдлаа`);
+  await pushState();
+}
+
+/* ── WINNER ── */
+function showWinner(p){
+  document.getElementById('winName').textContent=p.suit+' '+p.name;
+  document.getElementById('winScore').textContent=`Нийт оноо: ${p.score}`;
+  document.getElementById('winnerOv').classList.add('show');
+}
+async function endGame(){
+  document.getElementById('winnerOv').classList.remove('show');
+  const w=G.players.find(p=>!p.eliminated)||G.players[0];
+  if(ROLE==='host') saveH({ts:Date.now(),players:G.players.map(p=>({name:p.name,score:p.score})),winner:w.name});
+  if(WS)try{WS.close();}catch(_){}
+  clearInterval(POLL);
+  G.gameActive=false;ROLE=null;ROOM_CODE=null;
+  document.getElementById('roomBadge').classList.remove('show');
+  show('scrLobby');toast('Тоглоом дууслаа!');
+}
+
+/* ── RENDER ── */
+function renderAll(){renderScore();renderQI();renderSlots();renderRoundLog();}
+
+function renderScore(){
+  const el=document.getElementById('scoreboard');el.innerHTML='';
+  const seat=getSeat();
+  G.players.forEach((p,i)=>{
+    const inSeat=seat.includes(i);
+    const div=document.createElement('div');
+    div.className='pc'+(p.eliminated?' out':inSeat?' playing':' waiting');
+    div.setAttribute('data-suit',p.suit);
+    div.innerHTML=`
+      <span class="pc-suit${p.red?' red':''}">${p.suit}</span>
+      <div class="pc-name">${p.name}</div>
+      <div class="pc-score${p.score>=25?' hi':''}">${p.score}</div>
+      <div class="pc-st">${p.eliminated?'✕ ХАСАГДСАН':inSeat?'▶ ТОГЛОЖ БАЙНА':'⏳ ХҮЛЭЭЖ БАЙНА'}</div>`;
+    el.appendChild(div);
+  });
+}
+
+function renderQI(){
+  const el=document.getElementById('queueInfo');
+  const seat=getSeat(),waiting=G.queue.slice(seat.length);
+  if(!waiting.length){el.innerHTML='';return;}
+  el.innerHTML=`<span class="qi-icon">♣</span> Дараалал: <span>${waiting.map(i=>G.players[i].suit+G.players[i].name).join(' → ')}</span>`;
+}
+
+function renderSlots(){
+  if(ROLE==='guest'){document.getElementById('slots').innerHTML='';return;}
+  const seatR=G.editingRound!==null&&G._editSeat?G._editSeat:getSeat();
+  const c=seatR.length;
+  const el=document.getElementById('slots');
+  el.style.gridTemplateColumns=c<=2?'1fr':'repeat(2,1fr)';el.innerHTML='';
+  for(let s=0;s<c;s++){
+    const pIdx=seatR[s];if(pIdx===undefined)continue;
+    const p=G.players[pIdx],val=G.vals[s],isAct=G.activeSlot===s;
+    let nc='slot-num',hint='',disp=val!==''?val:'—';
+    if(val!==''){
+      const raw=parseInt(val);
+      if(raw===0){
+        const blocked=G.hasWon&&G.editingRound===null;
+        nc=blocked?'slot-num boom':'slot-num zero';
+        hint=blocked?'⛔ аль хэдийн хожсон байна!':'★ хожлоо — оноо нэмэгдэхгүй';
+      }else{
+        const m=mul(raw),after=p.score+m;
+        if(raw===13){nc='slot-num tri';hint=`×3=${m} | нийт: ${after}${after>=30?' ⚠️':''}`;}
+        else if(raw>=10){nc='slot-num dbl';hint=`×2=${m} | нийт: ${after}${after>=30?' ⚠️':''}`;}
+        else{nc='slot-num v';hint=`нийт: ${after}${after>=30?' ⚠️':''}`;}
+        if(after>=30)nc='slot-num boom';
+      }
+    }
+    el.innerHTML+=`<div class="slot${isAct?' active':''}${p.red?' red-suit':''}" onclick="setSlot(${s})" data-suit="${p.suit}">
+      <div class="slot-name">${p.suit} ${p.name}</div>
+      <div class="${nc}">${disp}</div>
+      <div class="slot-hint">${hint}</div>
+    </div>`;
+  }
+  const lbl=document.getElementById('npLabel');
+  if(G.activeSlot>=0&&G.activeSlot<c&&seatR[G.activeSlot]!==undefined){
+    lbl.textContent=G.players[seatR[G.activeSlot]].suit+' '+G.players[seatR[G.activeSlot]].name;
+  }else{lbl.textContent='талбар дарна уу';}
+}
+
+function show(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function sysLog(msg){
+  const now=new Date();
+  const t=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  const el=document.getElementById('logB');if(!el)return;
+  const d=document.createElement('div');d.className='le';
+  d.innerHTML=`<span class="lt">${t}</span><span class="lx">${msg}</span>`;el.prepend(d);
+}
+function showRules(){document.getElementById('rulesOv').classList.add('show');}
+function hideRules(){document.getElementById('rulesOv').classList.remove('show');}
+document.getElementById('rulesOv').addEventListener('click',e=>{if(e.target===document.getElementById('rulesOv'))hideRules();});
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2800);}
+
+document.addEventListener('keydown',e=>{
+  if(ROLE!=='host'||!G.gameActive)return;
+  if(e.key>='0'&&e.key<='9')tn(e.key);
+  if(e.key==='Backspace')clearSlot();
+  if(e.key==='Enter')doRegister();
+});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+</script>
+</body>
+</html>
