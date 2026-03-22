@@ -522,6 +522,14 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospac
         <button class="cfg-step" onclick="adjCfg('seatSize',1)">+</button>
       </div>
     </div>
+    <div class="cfg-row">
+      <div class="cfg-label">Гарах тоглогч<small>Тоглолт дуусахад хэдэн хүн гарах вэ (хожсон + хамгийн их оноотой)</small></div>
+      <div class="cfg-stepper">
+        <button class="cfg-step" onclick="adjCfg('exitCount',-1)">−</button>
+        <div class="cfg-val" id="cfgExitCount">1</div>
+        <button class="cfg-step" onclick="adjCfg('exitCount',1)">+</button>
+      </div>
+    </div>
     <button class="cfg-save" onclick="saveCfg()">✓ ХАДГАЛАХ</button>
   </div>
 </div>
@@ -546,7 +554,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospac
     <div class="ri"><span class="ric" style="color:var(--green)">★</span><span><b style="color:var(--green)">0</b> = хожлоо. Оноо хэвээр. Тэр хүн <b>гарч, дараалалын сүүлд</b> очно.</span></div>
     <div class="ri"><span class="ric">🔄</span><span>Хожсоны оронд <b>тоглоогүй дараагийн хүн</b> орно.</span></div>
     <div class="ri"><span class="ric">💥</span><span>Оноо <b style="color:var(--gold)">30+</b> болбол <b style="color:var(--red)">хасагдана.</b></span></div>
-    <div class="ri"><span class="ric">✖️</span><span><b style="color:var(--green)">10–12 мод</b> → ×2 &nbsp;|&nbsp; <b style="color:var(--purple)">13 мод</b> → ×3</span></div>
+    
     <div class="ri"><span class="ric">♚</span><span><b>Ялагч:</b> бусад бүгд хасагдаж ганцаараа үлдсэн хүн.</span></div>
     <button class="rclose" onclick="hideRules()">ХААХ</button>
   </div>
@@ -688,8 +696,10 @@ const SUITS=['♠','♥','♦','♣'],IS_RED=[false,true,true,false];
 
 /* ── GAME CONFIG (тохируулагдах боломжтой) ── */
 let CFG = {
-  maxScore: parseInt(localStorage.getItem('cfg_maxScore')||'30'),
-  seatSize: parseInt(localStorage.getItem('cfg_seatSize')||'4'),
+  maxScore:  parseInt(localStorage.getItem('cfg_maxScore') ||'30'),
+  seatSize:  parseInt(localStorage.getItem('cfg_seatSize') ||'4'),
+  exitCount: parseInt(localStorage.getItem('cfg_exitCount')||'1'),
+  // exitCount: тоглолт дуусахад хэдэн тоглогч гарах вэ (хожсон + өндөр оноотой N)
 };
 
 /* ── SOUND ENGINE ── */
@@ -999,9 +1009,7 @@ async function doRegister(){
       sysLog(`<span class="g">${p.suit}🏆 ${p.name} хожлоо!</span> оноо: ${p.score}`);
     }else{
       const m=mul(raw);p.score+=m;e.scored=m;
-      let lm=`<span class="a">${p.suit} ${p.name}</span> ${raw} мод`;
-      if(raw===13)lm+=` ×3=${m}`;else if(raw>=10)lm+=` ×2=${m}`;else lm+=` +${m}`;
-      lm+=` → <b>${p.score}</b>`;
+      let lm=`<span class="a">${p.suit} ${p.name}</span> ${raw} мод +${m} → <b>${p.score}</b>`;
       if(isOver(p.score)){p.eliminated=true;e.elim=true;elimIdxs.push(pIdx);lm+=` <span class="r">ХАСАГДЛАА</span>`;sfxElim();}
       sysLog(lm);
     }
@@ -1009,8 +1017,22 @@ async function doRegister(){
   }
   G.roundNum++;G.roundLog.push({num:G.roundNum,entries});
   const waiting=G.queue.slice(c);
-  const stayed=seat.filter(i=>i!==winnerIdx&&!elimIdxs.includes(i));
-  G.queue=[...stayed,...waiting];
+  // хожоогүй, хасагдаагүй тоглогчид
+  let stayed=seat.filter(i=>i!==winnerIdx&&!elimIdxs.includes(i));
+  // exitCount-1 нь хамгийн ӨНДӨР оноотой (муу тоглосон) тоглогчид гарна
+  const extraExit=Math.max(0,(CFG.exitCount-1));
+  if(extraExit>=stayed.length){
+    // бүгд гарна
+    stayed.sort((a,b)=>G.players[a].score-G.players[b].score); // бага оноо урд (эрт дараалалд орно)
+    G.queue=[...waiting,...stayed];
+  } else if(extraExit>0){
+    // бага оноотой extraExit нь гарна, их оноотой үлдэнэ
+    stayed.sort((a,b)=>G.players[a].score-G.players[b].score); // бага оноо урд
+    const toBack=stayed.splice(0, extraExit); // бага оноотой exitCount-1 гарна
+    G.queue=[...stayed,...waiting,...toBack];
+  } else {
+    G.queue=[...stayed,...waiting];
+  }
   if(winnerIdx>=0)G.queue.push(winnerIdx);
 
   const alive=G.players.filter(p=>!p.eliminated);
@@ -1176,6 +1198,7 @@ document.addEventListener('click',e=>{if(e.target===document.getElementById('qrM
 function showCfg(){
   document.getElementById('cfgMaxScore').textContent=CFG.maxScore;
   document.getElementById('cfgSeatSize').textContent=CFG.seatSize;
+  document.getElementById('cfgExitCount').textContent=CFG.exitCount;
   document.getElementById('cfgMo').classList.add('show');
 }
 function hideCfg(){ document.getElementById('cfgMo').classList.remove('show'); }
@@ -1184,12 +1207,14 @@ document.addEventListener('click',e=>{if(e.target===document.getElementById('cfg
 function adjCfg(key,delta){
   if(key==='maxScore'){CFG.maxScore=Math.max(15,Math.min(100,CFG.maxScore+delta));document.getElementById('cfgMaxScore').textContent=CFG.maxScore;}
   if(key==='seatSize'){CFG.seatSize=Math.max(2,Math.min(6,CFG.seatSize+delta));document.getElementById('cfgSeatSize').textContent=CFG.seatSize;}
+  if(key==='exitCount'){CFG.exitCount=Math.max(1,Math.min(CFG.seatSize,CFG.exitCount+delta));document.getElementById('cfgExitCount').textContent=CFG.exitCount===''+CFG.seatSize?CFG.exitCount+' (бүгд)':CFG.exitCount;}
 }
 function saveCfg(){
   localStorage.setItem('cfg_maxScore',CFG.maxScore);
   localStorage.setItem('cfg_seatSize',CFG.seatSize);
+  localStorage.setItem('cfg_exitCount',CFG.exitCount);
   hideCfg();
-  toast(`✓ Тохиргоо хадгалагдлаа: ${CFG.maxScore} оноо · ${CFG.seatSize} тоглогч`);
+  toast(`✓ ${CFG.maxScore} оноо · ${CFG.seatSize} тоглогч · ${CFG.exitCount} гарна`);
   renderAll();
 }
 
@@ -1318,8 +1343,8 @@ function renderSlots(){
         hint=blocked?'⛔ аль хэдийн хожсон байна!':'★ хожлоо — оноо нэмэгдэхгүй';
       }else{
         const m=mul(raw),after=p.score+m;
-        if(raw===13){nc='slot-num tri';hint=`×3=${m} | нийт: ${after}${isOver(after)?' ⚠️':''}`;}
-        else if(raw>=10){nc='slot-num dbl';hint=`×2=${m} | нийт: ${after}${isOver(after)?' ⚠️':''}`;}
+        if(raw===13){nc='slot-num tri';hint=`нийт: ${after}${isOver(after)?' ⚠️':''}`;}
+        else if(raw>=10){nc='slot-num dbl';hint=`нийт: ${after}${isOver(after)?' ⚠️':''}`;}
         else{nc='slot-num v';hint=`нийт: ${after}${isOver(after)?' ⚠️':''}`;}
         if(after>=30)nc='slot-num boom';
       }
