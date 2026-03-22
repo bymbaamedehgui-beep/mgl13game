@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="/icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root[data-theme="dark"]{
   --bg:#0d1117;--surf:#161b22;--card:#1c2128;
@@ -195,7 +196,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospac
 .slot.red-suit::before,.slot.red-suit::after{color:var(--red);}
 .slot:hover{border-color:var(--muted);transform:translateY(-1px);}
 .slot.active{border-color:var(--green);box-shadow:0 0 14px rgba(63,185,80,0.2);}
-.slot-name{padding:6px 32px 4px;font-size:0.5rem;letter-spacing:2px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+.slot-name{padding:6px 32px 4px;font-size:0.72rem;letter-spacing:2px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font-weight:600;}
 .slot-num{font-family:'Bebas Neue',sans-serif;font-size:3.6rem;letter-spacing:4px;padding:6px 16px 2px;line-height:1;color:var(--border);min-height:62px;display:flex;align-items:center;justify-content:center;}
 .slot-num.v{color:var(--text);}
 .slot-num.zero{color:var(--green);text-shadow:0 0 20px rgba(63,185,80,0.5);}
@@ -265,6 +266,46 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospac
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surf);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:8px;font-size:0.72rem;letter-spacing:1px;z-index:200;pointer-events:none;max-width:86vw;text-align:center;box-shadow:0 4px 20px var(--shadow);}
 .toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── QR MODAL ── */
+.qr-mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:110;align-items:center;justify-content:center;backdrop-filter:blur(8px);}
+.qr-mo.show{display:flex;}
+.qr-box{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;max-width:320px;width:90%;box-shadow:0 0 60px var(--shadow);}
+.qr-title{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;color:var(--gold);margin-bottom:4px;}
+.qr-sub{font-size:0.58rem;color:var(--muted);letter-spacing:2px;margin-bottom:16px;}
+#qrCanvas{border-radius:10px;background:#fff;padding:10px;}
+.qr-code-big{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;letter-spacing:10px;color:var(--gold);margin-top:12px;}
+.qr-close{margin-top:14px;width:100%;padding:9px;background:var(--card);border:1px solid var(--border);color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:3px;cursor:pointer;border-radius:8px;}
+.qr-close:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── EMOJI REACTIONS ── */
+.react-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:10px 14px;background:var(--surf);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;}
+.react-btn{font-size:1.4rem;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;transition:all 0.15s;position:relative;}
+.react-btn:hover{transform:scale(1.2);border-color:var(--gold);}
+.react-btn:active{transform:scale(0.9);}
+.react-count{position:absolute;top:-6px;right:-6px;background:var(--gold);color:#0d1117;font-size:0.5rem;font-weight:700;border-radius:10px;padding:1px 5px;font-family:'IBM Plex Mono',monospace;min-width:16px;text-align:center;}
+.react-float{position:fixed;pointer-events:none;font-size:2rem;z-index:500;animation:floatUp 1.8s ease forwards;}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-120px) scale(1.4)}}
+
+/* ── SETTINGS MODAL ── */
+.cfg-mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:110;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.cfg-mo.show{display:flex;}
+.cfg-box{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:380px;width:90%;box-shadow:0 8px 40px var(--shadow);}
+.cfg-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:4px;color:var(--gold);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.cfg-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;}
+.cfg-label{font-size:0.65rem;letter-spacing:1px;color:var(--text);flex:1;}
+.cfg-label small{display:block;color:var(--muted);font-size:0.55rem;margin-top:2px;}
+.cfg-val{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--gold);min-width:40px;text-align:center;}
+.cfg-stepper{display:flex;align-items:center;gap:6px;}
+.cfg-step{width:30px;height:30px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:1rem;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.cfg-step:hover{border-color:var(--gold);color:var(--gold);}
+.cfg-save{width:100%;padding:11px;background:var(--gold);border:none;color:#0d1117;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:4px;cursor:pointer;border-radius:8px;margin-top:6px;}
+.cfg-save:hover{filter:brightness(1.08);}
+
+/* ── SOUND TOGGLE ── */
+.sound-toggle{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:0.9rem;width:34px;height:34px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.sound-toggle:hover{border-color:var(--gold);}
+.sound-toggle.on{color:var(--gold);border-color:var(--gold);}
 </style>
 </head>
 <body>
@@ -289,6 +330,8 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospac
       <span style="font-size:0.8rem;color:var(--muted)">⎘</span>
     </div>
     <button class="ibtn" onclick="showRules()">? ДҮРЭМ</button>
+    <button class="ibtn" onclick="showCfg()" title="Тохиргоо">⚙️</button>
+    <button class="sound-toggle on" id="soundBtn" onclick="toggleSound()" title="Дуу">🔔</button>
     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
       <div class="theme-toggle-thumb" id="themeThumb">🌙</div>
     </button>
@@ -357,6 +400,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospac
     <div class="sync-bar">
       <div class="sync-dot spin" id="syncDot"></div>
       <span id="syncLabel">холбогдож байна...</span>
+      <button onclick="showQR()" style="margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:0.6rem;padding:3px 8px;border-radius:4px;cursor:pointer;letter-spacing:1px;" title="QR код">📱 QR</button>
     </div>
     <div class="scoreboard" id="scoreboard"></div>
     <div class="qi" id="queueInfo"></div>
@@ -398,6 +442,10 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospac
           <button class="act reg" onclick="doRegister()">♦ БҮРТГЭХ</button>
         </div>
       </div>
+      <div class="react-bar" id="reactBarHost" style="display:none">
+        <span style="font-size:0.55rem;color:var(--muted);letter-spacing:2px;align-self:center">REACTIONS:</span>
+        <span id="reactDisplay" style="font-size:1.2rem;letter-spacing:4px"></span>
+      </div>
       <div class="logl">
         <div class="logl-h"><span class="logl-h-suit">♣</span> тоглоомын бүртгэл</div>
         <div class="logl-b" id="logB"></div>
@@ -406,6 +454,14 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospac
 
     <!-- GUEST ONLY -->
     <div id="guestArea" style="display:none">
+      <div class="react-bar" id="reactBar">
+        <button class="react-btn" onclick="sendReact('👏')">👏<span class="react-count" id="rc-👏" style="display:none">0</span></button>
+        <button class="react-btn" onclick="sendReact('🔥')">🔥<span class="react-count" id="rc-🔥" style="display:none">0</span></button>
+        <button class="react-btn" onclick="sendReact('😬')">😬<span class="react-count" id="rc-😬" style="display:none">0</span></button>
+        <button class="react-btn" onclick="sendReact('💀')">💀<span class="react-count" id="rc-💀" style="display:none">0</span></button>
+        <button class="react-btn" onclick="sendReact('🤑')">🤑<span class="react-count" id="rc-🤑" style="display:none">0</span></button>
+        <button class="react-btn" onclick="sendReact('😤')">😤<span class="react-count" id="rc-😤" style="display:none">0</span></button>
+      </div>
       <div class="guest-banner">
         <div class="guest-banner-icon">👁️</div>
         <div class="guest-banner-t">ХАРАГЧ ГОРИМ</div>
@@ -416,6 +472,42 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospac
         <div class="guest-code" onclick="copyCode()" title="Хуулах">⎘ <span id="guestCodeShow"></span></div>
       </div>
     </div>
+  </div>
+</div>
+
+
+<!-- QR MODAL -->
+<div class="qr-mo" id="qrMo">
+  <div class="qr-box">
+    <div class="qr-title">📱 QR КОД</div>
+    <div class="qr-sub">// scan хийгээд шууд нэгдэнэ</div>
+    <canvas id="qrCanvas" width="200" height="200"></canvas>
+    <div class="qr-code-big" id="qrCodeText"></div>
+    <button class="qr-close" onclick="hideQR()">ХААХ</button>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="cfg-mo" id="cfgMo">
+  <div class="cfg-box">
+    <div class="cfg-title">⚙️ ТОХИРГОО</div>
+    <div class="cfg-row">
+      <div class="cfg-label">Хасагдах оноо<small>Энэ оноонд хүрвэл хасагдана</small></div>
+      <div class="cfg-stepper">
+        <button class="cfg-step" onclick="adjCfg('maxScore',-5)">−</button>
+        <div class="cfg-val" id="cfgMaxScore">30</div>
+        <button class="cfg-step" onclick="adjCfg('maxScore',5)">+</button>
+      </div>
+    </div>
+    <div class="cfg-row">
+      <div class="cfg-label">Нэг тоглолтод<small>Хэдэн тоглогч тоглох вэ</small></div>
+      <div class="cfg-stepper">
+        <button class="cfg-step" onclick="adjCfg('seatSize',-1)">−</button>
+        <div class="cfg-val" id="cfgSeatSize">4</div>
+        <button class="cfg-step" onclick="adjCfg('seatSize',1)">+</button>
+      </div>
+    </div>
+    <button class="cfg-save" onclick="saveCfg()">✓ ХАДГАЛАХ</button>
   </div>
 </div>
 
@@ -451,10 +543,29 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospac
 <script>
 /* ══════════════════════════
    SUPABASE CONFIG
-   supabase.com → Project → Settings → API
+   Vercel dashboard → Settings → Environment Variables дээр:
+     SUPABASE_URL  =  https://xxxx.supabase.co
+     SUPABASE_KEY  =  eyJhbGci...
    ══════════════════════════ */
-const SUPABASE_URL = 'https://pmmidzhwdilmwzpizoxo.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_Bc1GvIp_yHxCAuq3KaQX-A_f8FwzSMu';
+let SUPABASE_URL = '';
+let SUPABASE_KEY = '';
+
+async function loadConfig() {
+  try {
+    const r = await fetch('/api/config');
+    const text = await r.text();
+    // HTML буцаасан бол (route олдоогүй) алдаа гаргахгүй
+    if (text.trim().startsWith('<')) {
+      console.warn('⚠️ /api/config route ажиллахгүй байна — env variable шалгана уу');
+      return;
+    }
+    const d = JSON.parse(text);
+    SUPABASE_URL = d.url || '';
+    SUPABASE_KEY = d.key || '';
+  } catch (e) {
+    console.warn('Config ачааллахад алдаа:', e);
+  }
+}
 
 /* ── SUPABASE HELPERS ── */
 const SB = {
@@ -471,15 +582,25 @@ const SB = {
       `${SUPABASE_URL}/rest/v1/rooms?code=eq.${code}&select=state`,
       { headers: this.headers() }
     );
+    if(!r.ok){
+      const txt = await r.text();
+      console.error('Supabase get error:', r.status, txt);
+      throw new Error(`Supabase ${r.status}: ${txt.slice(0,120)}`);
+    }
     const d = await r.json();
     return d[0]?.state ?? null;
   },
   async upsert(code, state){
-    await fetch(`${SUPABASE_URL}/rest/v1/rooms`, {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rooms`, {
       method: 'POST',
       headers: this.headers(),
       body: JSON.stringify({ code, state, updated_at: new Date().toISOString() })
     });
+    if(!r.ok){
+      const txt = await r.text();
+      console.error('Supabase upsert error:', r.status, txt);
+      throw new Error(`Supabase ${r.status}: ${txt.slice(0,120)}`);
+    }
   },
   /* Realtime websocket */
   subscribe(code, onUpdate){
@@ -550,13 +671,70 @@ function toggleTheme(){
 /* ── CONSTANTS ── */
 const SUITS=['♠','♥','♦','♣'],IS_RED=[false,true,true,false];
 
+/* ── GAME CONFIG (тохируулагдах боломжтой) ── */
+let CFG = {
+  maxScore: parseInt(localStorage.getItem('cfg_maxScore')||'30'),
+  seatSize: parseInt(localStorage.getItem('cfg_seatSize')||'4'),
+};
+
+/* ── SOUND ENGINE ── */
+let SOUND_ON = localStorage.getItem('13gvSound') !== 'off';
+const AC = new (window.AudioContext||window.webkitAudioContext)();
+
+function playTone(freq, type, dur, vol=0.3){
+  if(!SOUND_ON) return;
+  try{
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.connect(g); g.connect(AC.destination);
+    o.type=type; o.frequency.setValueAtTime(freq, AC.currentTime);
+    g.gain.setValueAtTime(vol, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime+dur);
+    o.start(); o.stop(AC.currentTime+dur);
+  }catch(_){}
+}
+
+function sfxWin(){
+  // 0 авахад ялалтын дуу
+  [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.3,0.4),i*100));
+}
+function sfxDanger(){
+  // 13 мод авахад аюулын дуу
+  playTone(150,'sawtooth',0.15,0.5);
+  setTimeout(()=>playTone(120,'sawtooth',0.3,0.5),150);
+}
+function sfxElim(){
+  // хасагдахад
+  [400,300,200].forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.12,0.3),i*80));
+}
+function sfxRegister(){
+  // бүртгэх дарахад
+  playTone(880,'sine',0.08,0.15);
+}
+function sfxReact(){
+  playTone(1200,'sine',0.05,0.1);
+}
+
+function toggleSound(){
+  SOUND_ON=!SOUND_ON;
+  localStorage.setItem('13gvSound', SOUND_ON?'on':'off');
+  const btn=document.getElementById('soundBtn');
+  if(btn){ btn.textContent=SOUND_ON?'🔔':'🔕'; btn.className='sound-toggle'+(SOUND_ON?' on':''); }
+  // AudioContext resume (mobile)
+  if(SOUND_ON && AC.state==='suspended') AC.resume();
+}
+
+// Mobile touch-д AC resume хийх
+document.addEventListener('touchstart', ()=>{ if(AC.state==='suspended') AC.resume(); }, {once:true});
+document.addEventListener('click', ()=>{ if(AC.state==='suspended') AC.resume(); }, {once:true});
+
 /* ── APP STATE ── */
 let ROLE=null,ROOM_CODE=null,WS=null,POLL=null;
 let G={players:[],queue:[],hasWon:false,vals:['','','',''],activeSlot:0,roundLog:[],roundNum:0,editingRound:null,_editSeat:null,gameActive:false};
 
-const getSeat=()=>G.queue.slice(0,Math.min(4,G.queue.length));
+const getSeat=()=>G.queue.slice(0,Math.min(CFG.seatSize,G.queue.length));
 const cnt=()=>getSeat().length;
 const mul=n=>n===13?n*3:n>=10?n*2:n;
+const isOver=score=>score>=CFG.maxScore;
 
 /* ── SYNC STATUS ── */
 function setSyncStatus(state,label){
@@ -584,6 +762,7 @@ function copyCode(){
 
 /* ── LOBBY ACTIONS ── */
 async function goCreate(){
+  await loadConfig(); // config ачаалагдсан эсэхийг шалгана
   const code=genCode();
   showRoomBadge(code,'host');
   setSyncStatus('spin','өрөө үүсгэж байна...');
@@ -600,6 +779,7 @@ async function goCreate(){
 }
 
 async function doJoin(){
+  await loadConfig(); // config ачаалагдсан эсэхийг шалгана
   const code=document.getElementById('joinCodeInput').value.trim().toUpperCase();
   if(code.length!==4){toast('4 үсэгтэй код оруулна уу!');return;}
   setSyncStatus('spin','холбогдож байна...');
@@ -636,6 +816,7 @@ function handleRemoteState(st){
   applyRemoteState(st);
   renderAll();
   setSyncStatus('ok','Шинэчлэгдлээ');
+  if(st.reacts) renderReactions(st.reacts);
   if(st.phase==='done'&&st.winner) showWinner(st.winner);
 }
 
@@ -661,7 +842,11 @@ async function pushState(extra={}){
       hasWon:G.hasWon, ...extra
     });
     setSyncStatus('ok','Хадгалагдлаа');
-  }catch(e){setSyncStatus('err','Хадгалалт алдаатай');}
+  }catch(e){
+    console.error('pushState error:', e);
+    setSyncStatus('err','Хадгалалт алдаатай: '+e.message);
+    toast('⚠️ '+e.message);
+  }
 }
 
 /* ── UI MODE ── */
@@ -680,7 +865,32 @@ function setGuestMode(){
 
 /* ── HISTORY SIDEBAR ── */
 const SK='13gvD';
-function saveH(r){let h=[];try{h=JSON.parse(localStorage.getItem(SK))||[];}catch(_){}h=h.filter(x=>Date.now()-x.ts<86400000);h.unshift(r);localStorage.setItem(SK,JSON.stringify(h));}
+const SK_CUR='13gvCurrent';
+
+function saveH(r){
+  let h=[];try{h=JSON.parse(localStorage.getItem(SK))||[];}catch(_){}
+  h=h.filter(x=>Date.now()-x.ts<86400000);
+  const idx=h.findIndex(x=>x.sid&&x.sid===r.sid);
+  if(idx>=0)h[idx]=r;else h.unshift(r);
+  localStorage.setItem(SK,JSON.stringify(h));
+}
+
+// Бүртгэл хийх бүрт snapshot хадгална
+function autoSaveH(){
+  if(!G.players.length||ROLE!=='host')return;
+  saveH({
+    sid:G._sid, ts:G._startTs||Date.now(), ongoing:true,
+    players:G.players.map(p=>({name:p.name,score:p.score,eliminated:p.eliminated})),
+    roundNum:G.roundNum, winner:null
+  });
+  // Хуудас хаагдвал сэргээх боломжтой байхаар
+  localStorage.setItem(SK_CUR,JSON.stringify({
+    sid:G._sid, ts:G._startTs,
+    players:G.players, queue:G.queue,
+    roundLog:G.roundLog, roundNum:G.roundNum, hasWon:G.hasWon
+  }));
+}
+
 function loadH(){let h=[];try{h=JSON.parse(localStorage.getItem(SK))||[];}catch(_){}return h.filter(x=>Date.now()-x.ts<86400000);}
 function toggleSB(){document.getElementById('sbDraw').classList.contains('open')?closeSB():openSB();}
 function openSB(){document.getElementById('sbDraw').classList.add('open');document.getElementById('sbOv').classList.add('show');document.getElementById('hbgBtn').classList.add('open');renderSB();}
@@ -692,8 +902,11 @@ function renderSB(){
     const d=new Date(r.ts);
     const ds=`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     const ps=r.players.map(p=>`<div class="hc-p${p.name===r.winner?' win':''}">
-      ${p.name===r.winner?'🏆 ':''}<span class="hc-pn">${p.name}</span><span class="hc-sc">&nbsp;${p.score}</span></div>`).join('');
-    return `<div class="hc"><div class="hc-top"><span class="hc-d">${ds}</span><span class="hc-m">${r.players.length}х</span></div><div class="hc-ps">${ps}</div></div>`;
+      ${p.name===r.winner?'🏆 ':''}<span class="hc-pn">${p.name}</span><span class="hc-sc">&nbsp;${p.score}${p.eliminated?'✕':''}</span></div>`).join('');
+    const tag=r.ongoing
+      ?`<span style="color:var(--gold);font-size:0.5rem;letter-spacing:2px">● ${r.roundNum}-р бүртгэл</span>`
+      :`<span style="font-size:0.5rem;color:var(--muted)">${r.players.length}х</span>`;
+    return `<div class="hc"><div class="hc-top"><span class="hc-d">${ds}</span>${tag}</div><div class="hc-ps">${ps}</div></div>`;
   }).join('');
 }
 
@@ -722,6 +935,7 @@ async function startGame(){
   G.players=players;G.queue=players.map((_,i)=>i);
   G.hasWon=false;G.roundLog=[];G.roundNum=0;G.gameActive=true;
   G.vals=['','','',''];G.activeSlot=0;G.editingRound=null;G._editSeat=null;
+  G._sid=Date.now().toString(36);G._startTs=Date.now(); // session id
   show('scrGame');renderAll();
   sysLog(`Тоглоом эхэллээ — ${players.length} тоглогч`);
   sysLog(`🔀 ${players.map(p=>`${p.suit}${p.name}`).join(' ')}`);
@@ -736,7 +950,7 @@ function tn(v){
   if(ROLE!=='host')return;
   const s=G.activeSlot,c=cnt();
   if(s<0||s>=c){toast('Талбар дарна уу!');return;}
-  if(['10','11','12','13'].includes(v)){G.vals[s]=v;}
+  if(['10','11','12','13'].includes(v)){G.vals[s]=v;if(v==='13')sfxDanger();}
   else if(v==='0'){G.vals[s]='0';}
   else{if(G.vals[s]==='0')return;if(G.vals[s].length>=2)return;G.vals[s]+=v;}
   renderSlots();
@@ -747,6 +961,7 @@ function setSlot(s){if(ROLE!=='host')return;G.activeSlot=s;renderSlots();}
 /* ── REGISTER ── */
 async function doRegister(){
   if(ROLE!=='host')return;
+  sfxRegister();
   if(G.editingRound!==null){await applyEdit();return;}
   const seat=getSeat(),c=seat.length;
   for(let s=0;s<c;s++){if(G.vals[s]===''){toast(`${G.players[seat[s]].name}-н тоог оруулна уу!`);setSlot(s);return;}}
@@ -760,13 +975,14 @@ async function doRegister(){
     const e={name:p.name,pIdx,val:raw,scored:0,won:false,elim:false};
     if(raw===0){
       G.hasWon=true;e.won=true;winnerIdx=pIdx;
+      sfxWin();
       sysLog(`<span class="g">${p.suit}🏆 ${p.name} хожлоо!</span> оноо: ${p.score}`);
     }else{
       const m=mul(raw);p.score+=m;e.scored=m;
       let lm=`<span class="a">${p.suit} ${p.name}</span> ${raw} мод`;
       if(raw===13)lm+=` ×3=${m}`;else if(raw>=10)lm+=` ×2=${m}`;else lm+=` +${m}`;
       lm+=` → <b>${p.score}</b>`;
-      if(p.score>=30){p.eliminated=true;e.elim=true;elimIdxs.push(pIdx);lm+=` <span class="r">ХАСАГДЛАА</span>`;}
+      if(isOver(p.score)){p.eliminated=true;e.elim=true;elimIdxs.push(pIdx);lm+=` <span class="r">ХАСАГДЛАА</span>`;sfxElim();}
       sysLog(lm);
     }
     entries.push(e);
@@ -787,6 +1003,7 @@ async function doRegister(){
     return;
   }
   G.vals=['','','',''];G.hasWon=false;G.activeSlot=0;
+  autoSaveH(); // бүртгэл бүрт хадгална
   renderAll();
   await pushState();
 }
@@ -822,7 +1039,7 @@ async function applyEdit(){
   if(G.vals.slice(0,c).filter(v=>parseInt(v)===0).length>1){toast('Нэг тоглолтод нэг л хожно!');return;}
   r.entries.forEach(e=>{
     if(!e.won){G.players[e.pIdx].score-=e.scored;
-      if(e.elim&&G.players[e.pIdx].score<30){G.players[e.pIdx].eliminated=false;if(!G.queue.includes(e.pIdx))G.queue.push(e.pIdx);}
+      if(e.elim&&G.players[e.pIdx].score<CFG.maxScore){G.players[e.pIdx].eliminated=false;if(!G.queue.includes(e.pIdx))G.queue.push(e.pIdx);}
     }
   });
   const newEntries=[];
@@ -830,15 +1047,135 @@ async function applyEdit(){
     const e=r.entries[s],p=G.players[e.pIdx],raw=parseInt(G.vals[s]);
     const ne={name:e.name,pIdx:e.pIdx,val:raw,scored:0,won:false,elim:false};
     if(raw===0){ne.won=true;}
-    else{const m=mul(raw);p.score+=m;ne.scored=m;if(p.score>=30){p.eliminated=true;ne.elim=true;G.queue=G.queue.filter(i=>i!==e.pIdx);}}
+    else{const m=mul(raw);p.score+=m;ne.scored=m;if(isOver(p.score)){p.eliminated=true;ne.elim=true;G.queue=G.queue.filter(i=>i!==e.pIdx);}}
     newEntries.push(ne);
   }
   r.entries=newEntries;G.editingRound=null;G._editSeat=null;G.vals=['','','',''];G.activeSlot=0;
   sysLog(`✏️ ${r.num}-р бүртгэл засагдлаа`);
   const alive=G.players.filter(p=>!p.eliminated);
   if(alive.length<=1){renderAll();setTimeout(()=>showWinner(alive[0]||G.players[0]),400);return;}
+  autoSaveH(); // засвар хийсний дараа хадгална
   renderAll();toast(`${r.num}-р бүртгэл засагдлаа`);
   await pushState();
+}
+
+/* ── QR CODE ── */
+function showQR(){
+  if(!ROOM_CODE){toast('Өрөөний код байхгүй');return;}
+  document.getElementById('qrMo').classList.add('show');
+  document.getElementById('qrCodeText').textContent=ROOM_CODE;
+  const canvas=document.getElementById('qrCanvas');
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,200,200);
+  const url=window.location.origin+'/?join='+ROOM_CODE;
+  // qrcode.js ашиглах
+  try{
+    const qr=new QRCode(document.createElement('div'),{text:url,width:180,height:180,colorDark:'#000',colorLight:'#fff'});
+    setTimeout(()=>{
+      const img=qr._el?.querySelector('img')||qr._el?.querySelector('canvas');
+      if(img){
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,200,200);
+        const i=new Image();i.onload=()=>ctx.drawImage(i,10,10,180,180);
+        i.src=img.src||img.toDataURL();
+      }
+    },100);
+  }catch(e){
+    // Fallback: зүгээр текст харуулна
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,200,200);
+    ctx.fillStyle='#000';ctx.font='14px monospace';ctx.textAlign='center';
+    ctx.fillText('Scan хийхийн тулд',100,80);
+    ctx.fillText('линкийг хуулна уу',100,100);
+  }
+}
+function hideQR(){ document.getElementById('qrMo').classList.remove('show'); }
+document.addEventListener('click',e=>{if(e.target===document.getElementById('qrMo'))hideQR();});
+
+// URL-д join param байвал автоматаар join хийх
+(function checkJoinParam(){
+  const p=new URLSearchParams(location.search).get('join');
+  if(p&&p.length===4){
+    document.getElementById('joinCodeInput').value=p.toUpperCase();
+    setTimeout(doJoin,500);
+  }
+})();
+
+/* ── SETTINGS ── */
+function showCfg(){
+  document.getElementById('cfgMaxScore').textContent=CFG.maxScore;
+  document.getElementById('cfgSeatSize').textContent=CFG.seatSize;
+  document.getElementById('cfgMo').classList.add('show');
+}
+function hideCfg(){ document.getElementById('cfgMo').classList.remove('show'); }
+document.addEventListener('click',e=>{if(e.target===document.getElementById('cfgMo'))hideCfg();});
+
+function adjCfg(key,delta){
+  if(key==='maxScore'){CFG.maxScore=Math.max(15,Math.min(100,CFG.maxScore+delta));document.getElementById('cfgMaxScore').textContent=CFG.maxScore;}
+  if(key==='seatSize'){CFG.seatSize=Math.max(2,Math.min(6,CFG.seatSize+delta));document.getElementById('cfgSeatSize').textContent=CFG.seatSize;}
+}
+function saveCfg(){
+  localStorage.setItem('cfg_maxScore',CFG.maxScore);
+  localStorage.setItem('cfg_seatSize',CFG.seatSize);
+  hideCfg();
+  toast(`✓ Тохиргоо хадгалагдлаа: ${CFG.maxScore} оноо · ${CFG.seatSize} тоглогч`);
+  renderAll();
+}
+
+/* ── EMOJI REACTIONS ── */
+const REACT_EMOJIS=['👏','🔥','😬','💀','🤑','😤'];
+let reactCounts={};
+
+function sendReact(emoji){
+  sfxReact();
+  floatEmoji(emoji);
+  // Supabase-д reaction явуулах
+  if(ROOM_CODE){
+    reactCounts[emoji]=(reactCounts[emoji]||0)+1;
+    pushReaction(emoji);
+  }
+}
+
+async function pushReaction(emoji){
+  if(!ROOM_CODE||!SUPABASE_URL) return;
+  try{
+    const cur=await SB.get(ROOM_CODE);
+    if(!cur) return;
+    const reacts=cur.reacts||{};
+    reacts[emoji]=(reacts[emoji]||0)+1;
+    await SB.upsert(ROOM_CODE,{...cur,reacts});
+  }catch(_){}
+}
+
+function renderReactions(reacts){
+  if(!reacts) return;
+  // Guest reaction bar counts
+  REACT_EMOJIS.forEach(e=>{
+    const el=document.getElementById('rc-'+e);
+    if(el){
+      const n=reacts[e]||0;
+      el.style.display=n>0?'block':'none';
+      el.textContent=n;
+    }
+  });
+  // Host display
+  const disp=document.getElementById('reactDisplay');
+  const bar=document.getElementById('reactBarHost');
+  if(disp&&bar){
+    const total=Object.values(reacts).reduce((a,b)=>a+b,0);
+    if(total>0){
+      bar.style.display='flex';
+      disp.textContent=REACT_EMOJIS.filter(e=>reacts[e]).map(e=>e.repeat(Math.min(reacts[e],5))).join(' ');
+    } else { bar.style.display='none'; }
+  }
+}
+
+function floatEmoji(emoji){
+  const el=document.createElement('div');
+  el.className='react-float';
+  el.textContent=emoji;
+  el.style.left=Math.random()*60+20+'vw';
+  el.style.bottom='20vh';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1900);
 }
 
 /* ── WINNER ── */
@@ -850,7 +1187,12 @@ function showWinner(p){
 async function endGame(){
   document.getElementById('winnerOv').classList.remove('show');
   const w=G.players.find(p=>!p.eliminated)||G.players[0];
-  if(ROLE==='host') saveH({ts:Date.now(),players:G.players.map(p=>({name:p.name,score:p.score})),winner:w.name});
+  if(ROLE==='host'){
+    saveH({sid:G._sid,ts:G._startTs||Date.now(),ongoing:false,
+      players:G.players.map(p=>({name:p.name,score:p.score,eliminated:p.eliminated})),
+      roundNum:G.roundNum,winner:w.name});
+    localStorage.removeItem(SK_CUR); // тоглоом дууссан учир current-г устгана
+  }
   if(WS)try{WS.close();}catch(_){}
   clearInterval(POLL);
   G.gameActive=false;ROLE=null;ROOM_CODE=null;
@@ -903,9 +1245,9 @@ function renderSlots(){
         hint=blocked?'⛔ аль хэдийн хожсон байна!':'★ хожлоо — оноо нэмэгдэхгүй';
       }else{
         const m=mul(raw),after=p.score+m;
-        if(raw===13){nc='slot-num tri';hint=`×3=${m} | нийт: ${after}${after>=30?' ⚠️':''}`;}
-        else if(raw>=10){nc='slot-num dbl';hint=`×2=${m} | нийт: ${after}${after>=30?' ⚠️':''}`;}
-        else{nc='slot-num v';hint=`нийт: ${after}${after>=30?' ⚠️':''}`;}
+        if(raw===13){nc='slot-num tri';hint=`×3=${m} | нийт: ${after}${isOver(after)?' ⚠️':''}`;}
+        else if(raw>=10){nc='slot-num dbl';hint=`×2=${m} | нийт: ${after}${isOver(after)?' ⚠️':''}`;}
+        else{nc='slot-num v';hint=`нийт: ${after}${isOver(after)?' ⚠️':''}`;}
         if(after>=30)nc='slot-num boom';
       }
     }
@@ -940,7 +1282,68 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Backspace')clearSlot();
   if(e.key==='Enter')doRegister();
 });
+
+/* ── ДАХИН АЧААЛЛАХАД СЭРГЭЭХ ── */
+(function restoreSession(){
+  try{
+    const raw = localStorage.getItem(SK_CUR);
+    if(!raw) return;
+    const saved = JSON.parse(raw);
+    // 12 цагаас хуучин бол устгана
+    if(!saved.ts || Date.now()-saved.ts > 12*60*60*1000){
+      localStorage.removeItem(SK_CUR); return;
+    }
+    // Баннер харуулна
+    const banner = document.createElement('div');
+    banner.id = 'restoreBanner';
+    banner.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surf);border:1px solid var(--gold);border-radius:10px;padding:14px 18px;z-index:300;font-size:0.7rem;letter-spacing:1px;box-shadow:0 4px 20px var(--shadow);display:flex;align-items:center;gap:12px;max-width:90vw;';
+    banner.innerHTML = `
+      <div>
+        <div style="color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:3px;">● ТАСАРСАН ТОГЛООМ</div>
+        <div style="color:var(--muted);font-size:0.58rem;margin-top:2px;">${saved.players?.length||0} тоглогч · ${saved.roundNum||0}-р бүртгэл</div>
+      </div>
+      <button onclick="resumeSession()" style="background:var(--gold);border:none;color:#0d1117;font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:2px;padding:6px 12px;border-radius:6px;cursor:pointer;flex-shrink:0;">ҮРГЭЛЖЛҮҮЛЭХ</button>
+      <button onclick="document.getElementById('restoreBanner').remove();localStorage.removeItem('${SK_CUR}')" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:2px;padding:6px 10px;border-radius:6px;cursor:pointer;flex-shrink:0;">УСТГАХ</button>
+    `;
+    document.body.appendChild(banner);
+  }catch(_){}
+})();
+
+function resumeSession(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(SK_CUR));
+    if(!saved) return;
+    // State сэргээх
+    G.players   = saved.players  ||[];
+    G.queue     = saved.queue    ||[];
+    G.roundLog  = saved.roundLog ||[];
+    G.roundNum  = saved.roundNum ||0;
+    G.hasWon    = saved.hasWon   ||false;
+    G.gameActive= true;
+    G._sid      = saved.sid;
+    G._startTs  = saved.ts;
+    G.vals      = ['','','',''];
+    G.activeSlot= 0;
+    // Host горимд сэргээнэ (өөрийн тоглоом учир)
+    ROLE = 'host';
+    ROOM_CODE = null; // offline үргэлжлүүлэх
+    setHostMode();
+    show('scrGame');
+    renderAll();
+    setSyncStatus('ok', 'Тоглоом сэргээгдлээ');
+    toast('♠ Тоглоом үргэлжлэв!');
+    const b = document.getElementById('restoreBanner');
+    if(b) b.remove();
+  }catch(e){ console.error('Restore error:', e); }
+}
+
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+
+// Sound UI init
+(function(){
+  const btn=document.getElementById('soundBtn');
+  if(btn){ btn.textContent=SOUND_ON?'🔔':'🔕'; btn.className='sound-toggle'+(SOUND_ON?' on':''); }
+})();
 </script>
 </body>
 </html>
