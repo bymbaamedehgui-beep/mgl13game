@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="/icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <style>
 :root[data-theme="dark"]{
   --bg:#0d1117;--surf:#161b22;--card:#1c2128;
@@ -481,9 +481,13 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospac
   <div class="qr-box">
     <div class="qr-title">📱 QR КОД</div>
     <div class="qr-sub">// scan хийгээд шууд нэгдэнэ</div>
-    <canvas id="qrCanvas" width="200" height="200"></canvas>
+    <img id="qrImg" width="200" height="200" style="border-radius:10px;background:#fff;padding:8px;" alt="QR">
     <div class="qr-code-big" id="qrCodeText"></div>
-    <button class="qr-close" onclick="hideQR()">ХААХ</button>
+    <div style="font-size:0.55rem;color:var(--muted);margin-top:6px;letter-spacing:1px;word-break:break-all;" id="qrUrl"></div>
+    <div style="display:flex;gap:6px;margin-top:10px;">
+      <button class="qr-close" style="flex:1" onclick="copyQrLink()">⎘ ЛИНК ХУУЛАХ</button>
+      <button class="qr-close" style="flex:1" onclick="hideQR()">ХААХ</button>
+    </div>
   </div>
 </div>
 
@@ -1064,30 +1068,19 @@ function showQR(){
   if(!ROOM_CODE){toast('Өрөөний код байхгүй');return;}
   document.getElementById('qrMo').classList.add('show');
   document.getElementById('qrCodeText').textContent=ROOM_CODE;
-  const canvas=document.getElementById('qrCanvas');
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,200,200);
   const url=window.location.origin+'/?join='+ROOM_CODE;
-  // qrcode.js ашиглах
-  try{
-    const qr=new QRCode(document.createElement('div'),{text:url,width:180,height:180,colorDark:'#000',colorLight:'#fff'});
-    setTimeout(()=>{
-      const img=qr._el?.querySelector('img')||qr._el?.querySelector('canvas');
-      if(img){
-        ctx.fillStyle='#fff';ctx.fillRect(0,0,200,200);
-        const i=new Image();i.onload=()=>ctx.drawImage(i,10,10,180,180);
-        i.src=img.src||img.toDataURL();
-      }
-    },100);
-  }catch(e){
-    // Fallback: зүгээр текст харуулна
-    ctx.fillStyle='#fff';ctx.fillRect(0,0,200,200);
-    ctx.fillStyle='#000';ctx.font='14px monospace';ctx.textAlign='center';
-    ctx.fillText('Scan хийхийн тулд',100,80);
-    ctx.fillText('линкийг хуулна уу',100,100);
-  }
+  // Google Charts QR API — хамгийн найдвартай
+  const qrImg=document.getElementById('qrImg');
+  qrImg.src='https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl='+encodeURIComponent(url)+'&choe=UTF-8&chld=M|2';
+  qrImg.alt=url;
+  document.getElementById('qrUrl').textContent=url;
 }
 function hideQR(){ document.getElementById('qrMo').classList.remove('show'); }
+function copyQrLink(){
+  const url=window.location.origin+'/?join='+ROOM_CODE;
+  document.getElementById('qrUrl').textContent=url;
+  navigator.clipboard.writeText(url).then(()=>toast('📋 Линк хуулагдлаа!'));
+}
 document.addEventListener('click',e=>{if(e.target===document.getElementById('qrMo'))hideQR();});
 
 // URL-д join param байвал автоматаар join хийх
